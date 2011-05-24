@@ -1,0 +1,249 @@
+﻿using System;
+using System.Threading;
+using System.Collections;
+using System.Collections.Generic;
+
+namespace Computer.System.Threading
+{
+    /// <summary>
+    /// A class that controls the thread synchronization between scanners. This will
+    /// allow for multiple tasks to complete in less time
+    /// </summary>
+    public static class ThreadSynchronize
+    {
+        private static readonly object oLockingObject = new object();
+        private static int iActiveToolsAnalysis = 0;
+        private static List<Thread> aActiveThreads = new List<Thread>();
+
+        // -------------------------------------------------------------------------
+        // Scanning Semaphores
+        // -------------------------------------------------------------------------
+        private static Semaphore synchronizePortScanSemaphore;
+        private static Semaphore synchronizeIPAnalysisSemaphore;
+        private static Semaphore synchronizeActiveXComSemaphore;
+        private static Semaphore synchronizeHelpFileSemaphore;
+        private static Semaphore synchronizeDriverScanSemaphore;
+        private static Semaphore synchronizeRecentDocsSemaphore;
+        private static Semaphore synchronizeShortcutSemaphore;
+        private static Semaphore synchronizeLibrariesSemaphore;
+        private static Semaphore synchronizeSoftwareSettingSemaphore;
+        private static Semaphore synchronizeSoundEventSemaphore;
+        private static Semaphore synchronizeStartupSemaphore;
+        private static Semaphore synchronizeExtensionSemaphore;
+        private static Semaphore synchronizeFontSempaphore;
+
+        /// <summary>
+        /// The event that is called when the scanner has been stopped by the user or when
+        /// the scanner encounters an error
+        /// </summary>
+        public delegate void ScanStoppedHandler();
+
+        /// <summary>
+        /// The event that stopped the scanner. this can be the error or a user induced stop
+        /// on the scanner
+        /// </summary>
+        public static event ScanStoppedHandler ScanStopped;
+
+        /// <summary>
+        /// Get or set the maximum number of threads that are allowed to be active at
+        /// any given point in the execution of the process
+        /// </summary>
+        public static int MaximumThreads
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Syncronize the threads for the scanning process. reset all the semaphores in order
+        /// to rid of all threads that are no longer being used
+        /// </summary>
+        public static ThreadSynchronize()
+        {
+            MaximumThreads = 128;
+            ResetSemaphores();
+        }
+
+        /// <summary>
+        /// Reset the semaphores to a default value to allow for allocation of resources by 
+        /// the scanner
+        /// </summary>
+        public static void ResetSemaphores()
+        {
+            // Port Scanner
+            synchronizePortScanSemaphore        = new Semaphore(MaximumThreads,MaximumThreads);
+            synchronizeIPAnalysisSemaphore      = new Semaphore(MaximumThreads/2,MaximumThreads/2);
+
+            // Other Scanners
+            synchronizeActiveXComSemaphore      = new Semaphore(MaximumThreads,MaximumThreads);
+            synchronizeHelpFileSemaphore        = new Semaphore(MaximumThreads,MaximumThreads);
+            synchronizeDriverScanSemaphore      = new Semaphore(MaximumThreads,MaximumThreads);
+            synchronizeRecentDocsSemaphore      = new Semaphore(MaximumThreads,MaximumThreads);
+            synchronizeShortcutSemaphore        = new Semaphore(MaximumThreads,MaximumThreads);
+            synchronizeLibrariesSemaphore       = new Semaphore(MaximumThreads,MaximumThreads);
+            synchronizeSoftwareSettingSemaphore = new Semaphore(MaximumThreads,MaximumThreads);
+            synchronizeSoundEventSemaphore      = new Semaphore(MaximumThreads,MaximumThreads);
+            synchronizeStartupSemaphore         = new Semaphore(MaximumThreads,MaximumThreads);
+            synchronizeExtensionSemaphore       = new Semaphore(MaximumThreads,MaximumThreads);
+            synchronizeFontSempaphore           = new Semaphore(MaximumThreads,MaximumThreads);
+        }
+
+        /// <summary>
+        /// Reset all of the threads inside of the application used by the scanners. this will
+        /// allow for clean up and reallocation of the resources
+        /// </summary>
+        public static void Reset()
+        {
+            // Cycle through until the thread count is zero. this will mean that the application
+            // will cycle through all active threads 
+            while (aActiveThreads.Count > 0)
+            {
+                for (int i = aActiveThreads.Count - 1; i >= 0; --i)
+                {
+                    // Check for null value threads. these threads have either ceased to exist
+                    // or have completed and should be removed from the active listing of threads
+                    if (aActiveThreads[i] == null)
+                    {
+                        aActiveThreads.RemoveAt(i);
+                        continue;
+                    }
+
+                    // Abort the active threads so that they can be removed from the system
+                    // resources used by this application
+                    else
+                    {
+                        aActiveThreads[i].Abort();
+                    }
+
+                    // Release the aborted, unstarted and stopped threads from the application resource
+                    // allocation
+                    if ((aActiveThreads[i].ThreadState) == ThreadState.Stopped ||
+                        (aActiveThreads[i].ThreadState) == ThreadState.Aborted ||
+                        (aActiveThreads[i].ThreadState) == ThreadState.Unstarted)
+                    {
+                        aActiveThreads.RemoveAt(i);
+                        continue;
+                    }
+                }
+            }
+
+            aActiveThreads = new List<Thread>();
+            ResetSemaphores();
+            ScanStopped();
+            iActiveToolsAnalysis = 0;
+        }
+
+        /// <summary>
+        /// create a thread that will be locked and added to the active listing of threads used
+        /// by the application
+        /// </summary>
+        /// <param name="argumentThreadStart">the thread to start</param>
+        /// <returns>the created thread</returns>
+        public static Thread CreateThread(ThreadStart argumentThreadStart)
+        {
+            Thread newThread = new Thread(argumentThreadStart);
+
+            // Lock the Thread
+            lock (oLockingObject)
+            {
+                aActiveThreads.Add(newThread);
+            }
+
+            return newThread;
+        }
+
+        /// <summary>
+        /// Increament the counter of all the active tools in the application. this is used to
+        /// manage resources
+        /// </summary>
+        /// <param name="numberOfActivatedTools">The Number of tools activated</param>
+        public static void NotifyToolAnalysisEvent(int numberOfActivatedTools)
+        {
+            iActiveToolsAnalysis += numberOfActivatedTools;
+        }
+
+        /// <summary>
+        /// Force threads to sleep if the active count is higher then the max waiting to complete
+        /// count
+        /// </summary>
+        private static void WaitForActiveToolProcesses()
+        {
+            while (iActiveToolsAnalysis > 8) // Max tool analysis remaining to complete
+            {
+                Thread.Sleep(1000);
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="ArgumentIsStart"></param>
+        /// <param name="ArgumentIsPortScan"></param>
+        public static void NotifyThreadEvent(bool ArgumentIsStart, bool ArgumentIsPortScan)
+        {
+            if (!ArgumentIsStart)
+            {
+                WaitForActiveToolProcesses();
+            }
+
+            try
+            {
+                if (ArgumentIsStart)
+                {
+                    (ArgumentIsPortScan ? synchronizePortScanSemaphore : synchronizeIPAnalysisSemaphore).WaitOne();
+                }
+                else
+                {
+                    (ArgumentIsPortScan ? synchronizePortScanSemaphore : synchronizeIPAnalysisSemaphore).Release();
+                    if (aActiveThreads.Count > MaximumThreads * 10)
+                    {
+                        CleanThreadList();
+                    }
+                }
+            }
+
+            catch (ThreadAbortException threadException)
+            {
+
+            }
+
+            catch (ThreadInterruptedException threadInterrupted)
+            {
+
+            }
+
+            catch (ThreadStartException threadStartError)
+            {
+
+            }
+
+            catch (ThreadStateException threadStateError)
+            {
+
+            }
+        }
+
+        /// <summary>
+        /// Clean the active threads list so that the resources are not taken up by data
+        /// that is no longer needed
+        /// </summary>
+        private static void CleanThreadList()
+        {
+            for (int i = aActiveThreads.Count - 1; i >= 0; --i)
+            {
+                if (aActiveThreads[i] == null)
+                {
+                    aActiveThreads.RemoveAt(i);
+                    continue;
+                }
+                if ((aActiveThreads[i].ThreadState) == ThreadState.Stopped)
+                {
+                    aActiveThreads.RemoveAt(i);
+                }
+            }
+
+            // Trim the excess data from the list
+            aActiveThreads.TrimExcess();
+        }
+    }
+}

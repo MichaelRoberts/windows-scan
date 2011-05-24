@@ -1,0 +1,16 @@
+C:\Users\Michael Roberts\documents\visual studio 2010\Projects\Computer Information\obj\x86\Debug\ResolveAssemblyReference.cache
+C:\Users\Michael Roberts\documents\visual studio 2010\Projects\Computer Information\bin\Debug\Computer Information.exe
+C:\Users\Michael Roberts\documents\visual studio 2010\Projects\Computer Information\bin\Debug\Computer Information.pdb
+C:\Users\Michael Roberts\documents\visual studio 2010\Projects\Computer Information\obj\x86\Debug\Computer Information.exe
+C:\Users\Michael Roberts\documents\visual studio 2010\Projects\Computer Information\obj\x86\Debug\Computer Information.pdb
+C:\Users\Michael Roberts\documents\visual studio 2010\Projects\Computer Information\obj\x86\Debug\Computer.Properties.Resources.RegistryStrings.resources
+C:\Users\Michael Roberts\documents\visual studio 2010\Projects\Computer Information\obj\x86\Debug\Computer.Properties.Resources.Scanners.resources
+C:\Users\Michael Roberts\documents\visual studio 2010\Projects\Computer Information\obj\x86\Debug\Computer.Properties.Resources.ErrorReason.resources
+C:\Users\Michael Roberts\documents\visual studio 2010\Projects\Computer Information\obj\x86\Debug\GenerateResource.read.1.tlog
+C:\Users\Michael Roberts\documents\visual studio 2010\Projects\Computer Information\obj\x86\Debug\GenerateResource.write.1.tlog
+C:\Users\Michael Roberts\documents\visual studio 2010\Projects\Computer Information\obj\x86\Debug\Computer Information.TrustInfo.xml
+C:\Users\Michael Roberts\documents\visual studio 2010\Projects\Computer Information\obj\x86\Debug\Computer Information.exe.manifest
+C:\Users\Michael Roberts\documents\visual studio 2010\Projects\Computer Information\bin\Debug\Computer Information.exe.config
+C:\Users\Michael Roberts\documents\visual studio 2010\Projects\Computer Information\bin\Debug\Computer Information.exe.manifest
+C:\Users\Michael Roberts\documents\visual studio 2010\Projects\Computer Information\bin\Debug\Computer Information.application
+C:\Users\Michael Roberts\documents\visual studio 2010\Projects\Computer Information\obj\x86\Debug\Computer Information.application
