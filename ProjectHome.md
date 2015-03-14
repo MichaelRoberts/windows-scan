@@ -1,0 +1,1 @@
+The Project will find keys within the registry that may be needed for backups. The project also acts as a cleaner of information in the registry and temp files
